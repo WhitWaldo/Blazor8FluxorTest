@@ -13,6 +13,9 @@ namespace Fluxor.Blazor.Web.Components
 		[Inject]
 		private IActionSubscriber ActionSubscriber { get; set; }
 
+		[Inject]
+		private IStore Store { get; set; }
+
 		private bool Disposed;
 		private IDisposable StateSubscription;
 		private readonly ThrottledInvoker StateHasChangedThrottler;
@@ -32,7 +35,7 @@ namespace Fluxor.Blazor.Web.Components
 		/// <summary>
 		/// If greater than 0, the feature will not execute state changes
 		/// more often than this many times per second. Additional notifications
-		/// will be surpressed, and observers will be notified of the latest
+		/// will be suppressed, and observers will be notified of the latest
 		/// state when the time window has elapsed to allow another notification.
 		/// </summary>
 		protected byte MaximumStateChangedNotificationsPerSecond { get; set; }
@@ -64,7 +67,20 @@ namespace Fluxor.Blazor.Web.Components
 			}
 		}
 
-		/// <summary>
+        /// <summary>
+        /// Method invoked when the component has received parameters from its parent in
+        /// the render tree, and the incoming values have been assigned to properties.
+        /// </summary>
+        /// <returns>A <see cref="T:System.Threading.Tasks.Task" /> representing any asynchronous operation.</returns>
+        protected override async Task OnParametersSetAsync()
+        {
+			await base.OnParametersSetAsync();
+
+			//Attempt to initialize the store knowing that if it's already been initialized, this won't do anything.
+            await Store.InitializeAsync();
+        }
+
+        /// <summary>
 		/// Subscribes to state properties
 		/// </summary>
 		protected override void OnInitialized()
