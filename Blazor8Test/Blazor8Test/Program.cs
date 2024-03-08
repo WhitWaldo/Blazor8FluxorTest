@@ -1,6 +1,4 @@
 using Blazor8Test.Components;
-using Fluxor;
-using Shared.State.CounterUseCase;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,7 +7,7 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
     .AddInteractiveWebAssemblyComponents();
 
-builder.Services.AddFluxor(x => x.ScanAssemblies(typeof(Program).Assembly, typeof(CounterState).Assembly));
+Blazor8Test.Client.CommonRegistration.ConfigureCommonServices(builder.Services);
 
 var app = builder.Build();
 
