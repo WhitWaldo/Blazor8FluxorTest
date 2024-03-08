@@ -9,9 +9,5 @@ public static class Reducers
     public static CounterState ReduceIncrementCounterAction(CounterState state, IncrementCounterAction action)
     {
         return new CounterState(state.ClickCount + 1);
-        //return state with
-        //{
-        //    ClickCount = state.ClickCount + 1
-        //};
     }
 }

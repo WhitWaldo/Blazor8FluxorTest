@@ -1,8 +1,10 @@
-﻿namespace Shared.State.CounterUseCase;
+﻿using Fluxor;
 
-//public class CounterFeature : Feature<CounterState>
-//{
-//    public override string GetName() => "CounterState";
+namespace Shared.State.CounterUseCase;
 
-//    protected override CounterState GetInitialState() => new(0);
-//}
+public class CounterFeature : Feature<CounterState>
+{
+    public override string GetName() => "CounterState";
+
+    protected override CounterState GetInitialState() => new(0);
+}
