@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-
-namespace Fluxor
+﻿namespace Fluxor
 {
 	/// <summary>
 	/// Identifies a store, which is a collection of features. It is recommended that you do not create your
@@ -93,5 +89,9 @@ namespace Fluxor
 		/// Executed when an exception is not handled
 		/// </summary>
 		event EventHandler<Exceptions.UnhandledExceptionEventArgs> UnhandledException;
-	}
+
+        string SerializeToJson();
+
+        void RehydrateFromJson(string json);
+    }
 }

@@ -9,9 +9,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Blazor8Test.Client", "Blazo
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Shared", "Shared\Shared.csproj", "{0C7F6461-CAE2-4A5E-8A37-4AE8794D7314}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fluxor", "Fluxor\Fluxor.csproj", "{F4FCDB5E-1102-4B6F-8BDF-871E7439E319}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fluxor", "Fluxor\Fluxor.csproj", "{F4FCDB5E-1102-4B6F-8BDF-871E7439E319}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fluxor.Blazor.Web", "Fluxor.Blazor.Web\Fluxor.Blazor.Web.csproj", "{D3DFE93D-23BE-429B-AE5E-04FF0576C8A1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fluxor.Blazor.Web", "Fluxor.Blazor.Web\Fluxor.Blazor.Web.csproj", "{D3DFE93D-23BE-429B-AE5E-04FF0576C8A1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

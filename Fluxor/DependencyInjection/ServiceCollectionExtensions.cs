@@ -36,7 +36,7 @@ namespace Fluxor
 
 			IEnumerable<AssemblyScanSettings> scanIncludeList = options.MiddlewareTypes
 				.Select(t => new AssemblyScanSettings(t.Assembly, t.Namespace));
-
+			
 			ReflectionScanner.Scan(
 				options: options,
 				services: services,

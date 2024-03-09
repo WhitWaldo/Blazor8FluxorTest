@@ -78,11 +78,7 @@ namespace Fluxor.Blazor.Web
 				{
 					if (!string.IsNullOrWhiteSpace(MiddlewareInitializationScripts))
 						await JSRuntime.InvokeVoidAsync("eval", MiddlewareInitializationScripts);
-
-//#if !NET8
-//					await Store.InitializeAsync();
-//#endif
-				}
+                }
 				catch (JSException err)
 				{
 					// An error in some JavaScript, cannot recover from this

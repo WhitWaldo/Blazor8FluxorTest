@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Fluxor
+﻿namespace Fluxor
 {
 	/// <summary>
 	/// Identifies a self-contained sub-section of state within the store.

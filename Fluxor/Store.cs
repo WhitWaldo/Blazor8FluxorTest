@@ -1,8 +1,7 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Collections.Concurrent;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using Fluxor.Persistence;
 
 namespace Fluxor
 {
@@ -14,10 +13,12 @@ namespace Fluxor
 		/// <see cref="IStore.Initialized"/>
 		public Task Initialized => InitializedCompletionSource.Task;
 
-		private object SyncRoot = new object();
+        private readonly IPersistenceManager? _persistenceManager;
+
+        private object SyncRoot = new object();
 		private bool Disposed;
 		private readonly IDispatcher Dispatcher;
-		private readonly Dictionary<string, IFeature> FeaturesByName = new(StringComparer.InvariantCultureIgnoreCase);
+        private readonly Dictionary<string, IFeature> FeaturesByName = new(StringComparer.InvariantCultureIgnoreCase);
 		private readonly List<IEffect> Effects = new();
 		private readonly List<IMiddleware> Middlewares = new();
 		private readonly List<IMiddleware> ReversedMiddlewares = new();
@@ -33,8 +34,9 @@ namespace Fluxor
 		/// <summary>
 		/// Creates an instance of the store
 		/// </summary>
-		public Store(IDispatcher dispatcher)
-		{
+		public Store(IDispatcher dispatcher, IPersistenceManager? persistenceManager = null)
+        {
+            _persistenceManager = persistenceManager;
 			ActionSubscriber = new ActionSubscriber();
 			Dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
 			Dispatcher.ActionDispatched += ActionDispatched;
@@ -113,7 +115,13 @@ namespace Fluxor
 			if (HasActivatedStore)
 				return;
 			await ActivateStoreAsync();
-		}
+
+            if (_persistenceManager is not null)
+            {
+                //Rehydrate as necessary
+                Dispatcher.Dispatch(new StoreRehydratingAction());
+            }
+        }
 
 		public event EventHandler<Exceptions.UnhandledExceptionEventArgs> UnhandledException;
 
@@ -142,12 +150,11 @@ namespace Fluxor
 			}
 		}
 
-
 		private void ActionDispatched(object sender, ActionDispatchedEventArgs e)
 		{
 			// Do not allow task dispatching inside a middleware-change.
 			// These change cycles are for things like "jump to state" in Redux Dev Tools
-			// and should be short lived.
+			// and should be short-lived.
 			// We avoid dispatching inside a middleware change because we don't want UI events (like component Init)
 			// that trigger actions (such as fetching data from a server) to execute
 			if (IsInsideMiddlewareChange)
@@ -301,5 +308,36 @@ namespace Fluxor
 				IsDispatching = false;
 			}
 		}
+
+        public string SerializeToJson()
+        {
+            var rootObj = new JsonObject();
+            foreach (var kv in FeaturesByName)
+            {
+                var featureName = kv.Value.GetName();
+                var featureValue = kv.Value.GetState();
+
+                rootObj[featureName] = JsonSerializer.Serialize(featureValue);
+            }
+
+            return JsonSerializer.Serialize(rootObj);
+        }
+
+        public void RehydrateFromJson(string json)
+        {
+            var obj = JsonDocument.Parse(json);
+            foreach (var featureName in obj.RootElement.EnumerateObject())
+            {
+				//Replace the state in the named feature with what's in the serialized data
+                if (Features.ContainsKey(featureName.Name))
+                {
+                    var featureValue = featureName.Value.Deserialize(Features[featureName.Name].GetStateType());
+                    if (featureValue is null)
+                        continue;
+
+                    Features[featureName.Name].RestoreState(featureValue);
+                }
+            }
+        }
 	}
 }

@@ -1,6 +1,9 @@
 ﻿using Fluxor.UnsupportedClasses;
 using Microsoft.AspNetCore.Components;
-using System;
+using Fluxor.Blazor.Web.Persistence;
+using Fluxor.Persistence;
+using Microsoft.AspNetCore.Components.Routing;
+using Microsoft.Extensions.Options;
 
 namespace Fluxor.Blazor.Web.Components
 {
@@ -15,6 +18,12 @@ namespace Fluxor.Blazor.Web.Components
 
 		[Inject]
 		private IStore Store { get; set; }
+
+		[Inject]
+		private NavigationManager NavigationManager { get; set; }
+
+		[Inject]
+		private IDispatcher Dispatcher { get; set; }
 
 		private bool Disposed;
 		private IDisposable StateSubscription;
@@ -66,18 +75,13 @@ namespace Fluxor.Blazor.Web.Components
 				Disposed = true;
 			}
 		}
-
-        /// <summary>
-        /// Method invoked when the component has received parameters from its parent in
-        /// the render tree, and the incoming values have been assigned to properties.
-        /// </summary>
-        /// <returns>A <see cref="T:System.Threading.Tasks.Task" /> representing any asynchronous operation.</returns>
-        protected override async Task OnParametersSetAsync()
+		
+        protected override async Task OnAfterRenderAsync(bool firstRender)
         {
-			await base.OnParametersSetAsync();
-
-			//Attempt to initialize the store knowing that if it's already been initialized, this won't do anything.
+            //Attempt to initialize the store knowing that if it's already been initialized, this won't do anything.
             await Store.InitializeAsync();
+
+            await base.OnAfterRenderAsync(firstRender);
         }
 
         /// <summary>
@@ -90,9 +94,17 @@ namespace Fluxor.Blazor.Web.Components
 			{
 				StateHasChangedThrottler.Invoke(MaximumStateChangedNotificationsPerSecond);
 			});
-		}
 
-		protected virtual void Dispose(bool disposing)
+			//Subscribe to location changed navigation events - these will trigger the state persistence
+            NavigationManager.LocationChanged += PersistStoreStart;
+        }
+
+        private void PersistStoreStart(object? sender, LocationChangedEventArgs e)
+        {
+            Dispatcher.Dispatch(new StorePersistingAction());
+        }
+
+        protected virtual void Dispose(bool disposing)
 		{
 			if (disposing)
 			{
@@ -101,7 +113,8 @@ namespace Fluxor.Blazor.Web.Components
 
 				StateSubscription.Dispose();
 				ActionSubscriber?.UnsubscribeFromAllActions(this);
-			}
+                NavigationManager.LocationChanged -= PersistStoreStart;
+            }
 		}
 	}
 }

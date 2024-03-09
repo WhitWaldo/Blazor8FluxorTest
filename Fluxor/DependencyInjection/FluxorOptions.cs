@@ -1,9 +1,7 @@
 ﻿using Fluxor.Extensions;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
+using Fluxor.Persistence;
 
 namespace Fluxor.DependencyInjection
 {
@@ -16,6 +14,7 @@ namespace Fluxor.DependencyInjection
 		internal Type[] TypesToScan { get; private set; } = Array.Empty<Type>();
 		internal Type[] MiddlewareTypes = Array.Empty<Type>();
 		internal StoreLifetime StoreLifetime { get; set; } = StoreLifetime.Scoped;
+		internal IPersistenceManager? PersistenceManager { get; set; }
 
 		/// <summary>
 		/// Service collection for registering services
