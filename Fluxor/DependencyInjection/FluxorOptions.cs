@@ -113,7 +113,14 @@ namespace Fluxor.DependencyInjection
         /// <returns>Options</returns>
         public FluxorOptions WithPersistence<T>() where T : IPersistenceManager
         {
+			//Register the persistence manager implementation
             Services.AddScoped(typeof(IPersistenceManager), typeof(T));
+
+			//Add the PersistenceEffects to the types to scan so it registers the effects
+            var typeList = TypesToScan.ToList();
+			typeList.Add(typeof(PersistenceEffects));
+            TypesToScan = typeList.ToArray();
+			
             return this;
         }
 

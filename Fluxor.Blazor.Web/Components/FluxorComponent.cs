@@ -1,6 +1,5 @@
 ﻿using Fluxor.UnsupportedClasses;
 using Microsoft.AspNetCore.Components;
-using Fluxor.Blazor.Web.Persistence;
 using Fluxor.Persistence;
 using Microsoft.AspNetCore.Components.Routing;
 using Microsoft.Extensions.Options;
@@ -78,8 +77,11 @@ namespace Fluxor.Blazor.Web.Components
 		
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
-            //Attempt to initialize the store knowing that if it's already been initialized, this won't do anything.
-            await Store.InitializeAsync();
+            if (firstRender)
+            {
+                //Attempt to initialize the store knowing that if it's already been initialized, this won't do anything.
+                await Store.InitializeAsync();
+            }
 
             await base.OnAfterRenderAsync(firstRender);
         }

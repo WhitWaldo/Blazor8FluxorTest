@@ -1,7 +1,6 @@
-﻿using Fluxor.Persistence;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 
-namespace Fluxor.Blazor.Web.Persistence;
+namespace Fluxor.Persistence;
 
 public sealed class PersistenceEffects(IPersistenceManager persistenceManager, IServiceProvider serviceProvider)
 {
