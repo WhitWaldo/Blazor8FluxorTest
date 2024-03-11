@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Components;
 using Fluxor.Persistence;
 using Microsoft.AspNetCore.Components.Routing;
-using Microsoft.Extensions.Options;
 
 namespace Fluxor.Blazor.Web.Components
 {
