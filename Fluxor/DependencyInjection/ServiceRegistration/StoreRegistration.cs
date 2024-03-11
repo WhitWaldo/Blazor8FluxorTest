@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Fluxor.Persistence;
 
 namespace Fluxor.DependencyInjection.ServiceRegistration
 {
@@ -41,7 +42,8 @@ namespace Fluxor.DependencyInjection.ServiceRegistration
 			services.Add(typeof(Store), serviceProvider =>
 			{
 				var dispatcher = serviceProvider.GetService<IDispatcher>();
-				var store = new Store(dispatcher);
+                var persistenceManager = serviceProvider.GetService<IPersistenceManager>();
+				var store = new Store(dispatcher, persistenceManager);
 				foreach (FeatureClassInfo featureClassInfo in featureClassInfos)
 				{
 					var feature = (IFeature)serviceProvider.GetService(featureClassInfo.FeatureInterfaceGenericType);

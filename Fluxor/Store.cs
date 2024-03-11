@@ -34,14 +34,14 @@ namespace Fluxor
 		/// <summary>
 		/// Creates an instance of the store
 		/// </summary>
-		public Store(IDispatcher dispatcher, IPersistenceManager? persistenceManager = null)
+		public Store(IDispatcher dispatcher, IPersistenceManager persistenceManager = null)
         {
             _persistenceManager = persistenceManager;
 			ActionSubscriber = new ActionSubscriber();
 			Dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
 			Dispatcher.ActionDispatched += ActionDispatched;
 			Dispatcher.Dispatch(new StoreInitializedAction());
-		}
+        }
 
 		/// <see cref="IStore.GetMiddlewares"/>
 		public IEnumerable<IMiddleware> GetMiddlewares() => Middlewares;
@@ -115,12 +115,6 @@ namespace Fluxor
 			if (HasActivatedStore)
 				return;
 			await ActivateStoreAsync();
-
-            if (_persistenceManager is not null)
-            {
-                //Rehydrate as necessary
-                Dispatcher.Dispatch(new StoreRehydratingAction());
-            }
         }
 
 		public event EventHandler<Exceptions.UnhandledExceptionEventArgs> UnhandledException;
@@ -270,12 +264,19 @@ namespace Fluxor
 
 			await InitializeMiddlewaresAsync();
 
-			lock (SyncRoot)
+            lock (SyncRoot)
 			{
 				HasActivatedStore = true;
 				DequeueActions();
-				InitializedCompletionSource.SetResult(true);
-			}
+
+                if (_persistenceManager is not null)
+                {
+                    //Rehydrate as necessary
+                    Dispatcher.Dispatch(new StoreRehydratingAction());
+                }
+
+                InitializedCompletionSource.SetResult(true);
+            }
 		}
 
 		private void DequeueActions()
@@ -306,7 +307,7 @@ namespace Fluxor
 			finally
 			{
 				IsDispatching = false;
-			}
+            }
 		}
 
         public string SerializeToJson()
@@ -316,8 +317,7 @@ namespace Fluxor
             {
                 var featureName = kv.Value.GetName();
                 var featureValue = kv.Value.GetState();
-
-                rootObj[featureName] = JsonSerializer.Serialize(featureValue);
+                rootObj[featureName] = JsonSerializer.SerializeToNode(featureValue);
             }
 
             return JsonSerializer.Serialize(rootObj);
@@ -326,18 +326,22 @@ namespace Fluxor
         public void RehydrateFromJson(string json)
         {
             var obj = JsonDocument.Parse(json);
-            foreach (var featureName in obj.RootElement.EnumerateObject())
+
+            foreach (var feature in obj.RootElement.EnumerateObject())
             {
-				//Replace the state in the named feature with what's in the serialized data
-                if (Features.ContainsKey(featureName.Name))
+                //Replace the state in the named feature with what's in the serialized data
+                if (Features.ContainsKey(feature.Name))
                 {
-                    var featureValue = featureName.Value.Deserialize(Features[featureName.Name].GetStateType());
+                    var stateType = Features[feature.Name].GetStateType();
+                    var featureValue = feature.Value.Deserialize(stateType);
+
                     if (featureValue is null)
                         continue;
 
-                    Features[featureName.Name].RestoreState(featureValue);
+                    Features[feature.Name].RestoreState(featureValue);
                 }
             }
         }
-	}
+    }
 }
+

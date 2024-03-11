@@ -14,7 +14,6 @@ namespace Fluxor.DependencyInjection
 		internal Type[] TypesToScan { get; private set; } = Array.Empty<Type>();
 		internal Type[] MiddlewareTypes = Array.Empty<Type>();
 		internal StoreLifetime StoreLifetime { get; set; } = StoreLifetime.Scoped;
-		internal IPersistenceManager? PersistenceManager { get; set; }
 
 		/// <summary>
 		/// Service collection for registering services
@@ -36,12 +35,12 @@ namespace Fluxor.DependencyInjection
 		{
 			if (typeToScan is null)
 				throw new ArgumentNullException(nameof(typeToScan));
-
+			
 			var allTypes = new List<Type> { typeToScan };
 			if (additionalTypesToScan is not null)
 				allTypes.AddRange(additionalTypesToScan);
-
-			var genericTypeNames = string.Join(",",
+			
+            var genericTypeNames = string.Join(",",
 				allTypes
 					.Where(x => x.IsGenericTypeDefinition)
 					.Select(x => x.Name));
@@ -106,6 +105,29 @@ namespace Fluxor.DependencyInjection
 
 			return this;
 		}
+		
+        /// <summary>
+        /// Enables automatic store persistence between location state changes.
+        /// </summary>
+        /// <typeparam name="T">The type of persistence implementation to use.</typeparam>
+        /// <returns>Options</returns>
+        public FluxorOptions WithPersistence<T>() where T : IPersistenceManager
+        {
+            Services.AddScoped(typeof(IPersistenceManager), typeof(T));
+            return this;
+        }
+
+        /// <summary>
+        /// Enables automatic store persistence between location state changes.
+        /// </summary>
+        /// <typeparam name="T">The type of persistence implementation to use.</typeparam>
+        /// <returns>Options</returns>
+        public FluxorOptions WithPersistence<T>(IServiceCollection serviceCollection) where T : IPersistenceManager
+        {
+            WithPersistence<T>();
+            foreach (var serviceDescriptor in serviceCollection) Services.Add(serviceDescriptor);
+            return this;
+        }
 
 		/// <summary>
 		/// Enables the developer to specify a class that implements <see cref="IMiddleware"/>

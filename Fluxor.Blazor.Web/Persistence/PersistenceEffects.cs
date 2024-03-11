@@ -1,21 +1,23 @@
-﻿using Blazored.LocalStorage;
-using Fluxor.Persistence;
+﻿using Fluxor.Persistence;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Fluxor.Blazor.Web.Persistence;
 
-public sealed class PersistenceEffects(IPersistenceManager persistenceManager, IStore store, ILocalStorageService localStorage)
+public sealed class PersistenceEffects(IPersistenceManager persistenceManager, IServiceProvider serviceProvider)
 {
+    /// <summary>
+    /// Maintains a reference to IStore - injected this way to avoid a circular dependency during the effect method registration
+    /// </summary>
+    private readonly Lazy<IStore> _store = new(serviceProvider.GetRequiredService<IStore>);
+
     [EffectMethod(typeof(StorePersistingAction))]
     public async Task PersistStoreData(IDispatcher dispatcher)
     {
         //Serialize the store
-        var json = store.SerializeToJson();
-
-        //Get the identifier for the store from local storage (whether this is running on server or web assembly)
-        var storeIdentifier = await GetStoreIdentifierAsync();
+        var json = _store.Value.SerializeToJson();
 
         //Save to the persistence manager
-        await persistenceManager.PersistStoreAsync(storeIdentifier, json);
+        await persistenceManager.PersistStoreToStateAsync(json);
 
         //Completed
         dispatcher.Dispatch(new StorePersistedAction());
@@ -24,11 +26,8 @@ public sealed class PersistenceEffects(IPersistenceManager persistenceManager, I
     [EffectMethod(typeof(StoreRehydratingAction))]
     public async Task RehydrateStoreData(IDispatcher dispatcher)
     {
-        //Get the identifier for the store from local storage (whether this is running on server or web assembly)
-        var storeIdentifier = await GetStoreIdentifierAsync();
-
         //Read from the persistence manager
-        var serializedStore = await persistenceManager.RehydrateStoreAsync(storeIdentifier);
+        var serializedStore = await persistenceManager.RehydrateStoreFromStateAsync();
         if (serializedStore is null)
         {
             //Nothing to rehydrate - leave as-is
@@ -36,31 +35,9 @@ public sealed class PersistenceEffects(IPersistenceManager persistenceManager, I
             return;
         }
 
-        store.RehydrateFromJson(serializedStore);
+        _store.Value.RehydrateFromJson(serializedStore);
 
         //Completed
         dispatcher.Dispatch(new StoreRehydratedAction());
-    }
-
-    /// <summary>
-    /// Pulls the store identifier from the local storage, if found. Otherwise, creates a new value and persists
-    /// to local storage.
-    /// </summary>
-    /// <returns></returns>
-    private async Task<Guid> GetStoreIdentifierAsync()
-    {
-        const string localStorageIdentifier = "__flxid";
-
-        //Attempt to pull the identifier from the local storage, if it exists
-        var storeIdentifier = await localStorage.GetItemAsStringAsync(localStorageIdentifier);
-        if (storeIdentifier != null && Guid.TryParse(storeIdentifier, out var storeId))
-        {
-            return storeId;
-        }
-
-        //Otherwise, create a new identifier and persist it
-        var newIdentifier = Guid.NewGuid();
-        await localStorage.SetItemAsStringAsync(localStorageIdentifier, newIdentifier.ToString());
-        return newIdentifier;
     }
 }
