@@ -1,5 +1,3 @@
 ﻿namespace Shared.State.CounterUseCase;
 
-public sealed record CounterState(int ClickCount)
-{
-}
+public sealed record CounterState(int ClickCount);
