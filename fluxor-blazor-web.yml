@@ -18,6 +18,8 @@ variables:
     value: Fluxor.Blazor.Web
 
 steps:
+- script: |
+    git checkout $(Build.SourceBranch)
 - task: UseDotNet@2
   inputs:
     packageType: 'sdk'
