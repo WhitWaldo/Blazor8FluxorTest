@@ -19,7 +19,7 @@ variables:
 
 steps:
 - script: |
-    git checkout $(Build.SourceBranch)
+    git checkout persistence
 - task: UseDotNet@2
   inputs:
     packageType: 'sdk'
