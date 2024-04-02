@@ -1,7 +1,5 @@
 ﻿using Fluxor.UnsupportedClasses;
 using Microsoft.AspNetCore.Components;
-using Fluxor.Persistence;
-using Microsoft.AspNetCore.Components.Routing;
 
 namespace Fluxor.Blazor.Web.Components
 {
@@ -16,13 +14,7 @@ namespace Fluxor.Blazor.Web.Components
 
 		[Inject]
 		private IStore Store { get; set; }
-
-		[Inject]
-		private NavigationManager NavigationManager { get; set; }
-
-		[Inject]
-		private IDispatcher Dispatcher { get; set; }
-
+		
 		private bool Disposed;
 		private IDisposable StateSubscription;
 		private readonly ThrottledInvoker StateHasChangedThrottler;
@@ -30,14 +22,14 @@ namespace Fluxor.Blazor.Web.Components
 		/// <summary>
 		/// Creates a new instance
 		/// </summary>
-		public FluxorComponent()
+		protected FluxorComponent()
 		{
 			StateHasChangedThrottler = new ThrottledInvoker(() =>
 			{
 				if (!Disposed)
 					InvokeAsync(StateHasChanged);
 			});
-		}
+        }
 
 		/// <summary>
 		/// If greater than 0, the feature will not execute state changes
@@ -73,48 +65,39 @@ namespace Fluxor.Blazor.Web.Components
 				Disposed = true;
 			}
 		}
-		
-        protected override async Task OnAfterRenderAsync(bool firstRender)
-        {
-            if (firstRender)
-            {
-                //Attempt to initialize the store knowing that if it's already been initialized, this won't do anything.
-                await Store.InitializeAsync();
-            }
-
-            await base.OnAfterRenderAsync(firstRender);
-        }
 
         /// <summary>
 		/// Subscribes to state properties
 		/// </summary>
 		protected override void OnInitialized()
 		{
-			base.OnInitialized();
 			StateSubscription = StateSubscriber.Subscribe(this, _ =>
 			{
 				StateHasChangedThrottler.Invoke(MaximumStateChangedNotificationsPerSecond);
 			});
 
-			//Subscribe to location changed navigation events - these will trigger the state persistence
-            NavigationManager.LocationChanged += PersistStoreStart;
+            base.OnInitialized();
+        }
+		
+        protected override async Task OnInitializedAsync()
+        {
+            //Attempt to initialize the store knowing that if it's already been initialized, this won't do anything.
+            await Store.InitializeAsync();
+            await base.OnInitializedAsync();
         }
 
-        private void PersistStoreStart(object? sender, LocationChangedEventArgs e)
-        {
-            Dispatcher.Dispatch(new StorePersistingAction());
-        }
 
         protected virtual void Dispose(bool disposing)
 		{
 			if (disposing)
 			{
-				if (StateSubscription is null)
-					throw new NullReferenceException(ErrorMessages.ForgottenToCallBaseOnInitialized);
+                if (StateSubscription is null)
+                {
+                    throw new NullReferenceException(ErrorMessages.ForgottenToCallBaseOnInitialized);
+                }
 
-				StateSubscription.Dispose();
+                StateSubscription.Dispose();
 				ActionSubscriber?.UnsubscribeFromAllActions(this);
-                NavigationManager.LocationChanged -= PersistStoreStart;
             }
 		}
 	}

@@ -14,7 +14,8 @@
 
 <button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
 
-@code {
+@code 
+{
     private void IncrementCount()
     {
         Dispatcher.Dispatch(new IncrementCounterAction());

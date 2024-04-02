@@ -6,7 +6,7 @@ using Fluxor.Persistence;
 namespace Fluxor
 {
 	/// <see cref="IStore"/>
-	public class Store : IStore, IActionSubscriber, IDisposable
+	public class Store : IStore, IDisposable
 	{
 		/// <see cref="IStore.Features"/>
 		public IReadOnlyDictionary<string, IFeature> Features => FeaturesByName;
@@ -266,14 +266,14 @@ namespace Fluxor
 
             lock (SyncRoot)
 			{
-				HasActivatedStore = true;
-				DequeueActions();
-
                 if (_persistenceManager is not null)
                 {
                     //Rehydrate as necessary
                     Dispatcher.Dispatch(new StoreRehydratingAction());
                 }
+
+                HasActivatedStore = true;
+                DequeueActions();
 
                 InitializedCompletionSource.SetResult(true);
             }
@@ -287,7 +287,14 @@ namespace Fluxor
 			IsDispatching = true;
 			try
 			{
-				while (QueuedActions.TryDequeue(out object nextActionToProcess))
+				//Only persist the store state if the action(s) in the queue don't consist solely of any combination of the following
+                if (!QueuedActions.IsEmpty && !QueuedActions.All(action => action is StoreInitializedAction or StoreRehydratingAction or StoreRehydratedAction or StorePersistingAction or StorePersistedAction))
+                {
+                    //Add an action to the end of the queue that persists the results of the actions to state, skipping the dispatcher approach (which might lead to an infinite loop)
+                    QueuedActions.Enqueue(new StorePersistingAction());
+                }
+
+                while (QueuedActions.TryDequeue(out object nextActionToProcess))
 				{
 					// Only process the action if no middleware vetos it
 					if (Middlewares.All(x => x.MayDispatchAction(nextActionToProcess)))
@@ -338,7 +345,8 @@ namespace Fluxor
                     if (featureValue is null)
                         continue;
 
-                    Features[feature.Name].RestoreState(featureValue);
+					FeaturesByName[feature.Name].RestoreState(featureValue);
+                    //Features[feature.Name].RestoreState(featureValue);
                 }
             }
         }

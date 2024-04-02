@@ -1,19 +1,17 @@
-﻿using Blazored.SessionStorage;
-using Fluxor.Persistence;
+﻿using Fluxor.Persistence;
+using Shared.Interfaces;
 
 namespace Shared.Persistence;
 
-public sealed class SessionStorePersistenceManager(ISessionStorageService sessionStorageSvc) : IPersistenceManager
+public sealed class ServerSideStoreManager(IStateService stateSvc) : IPersistenceManager
 {
-    private const string KeyValue = "__flx";
-
     /// <summary>
     /// Persists the store to a persisted state.
     /// </summary>
     /// <param name="serializedStore">The serialized store data being persisted.</param>
     public async Task PersistStoreToStateAsync(string serializedStore)
     {
-        await sessionStorageSvc.SetItemAsStringAsync(KeyValue, serializedStore);
+        await stateSvc.PersistSerializedStateAsync(serializedStore);
     }
 
     /// <summary>
@@ -21,14 +19,15 @@ public sealed class SessionStorePersistenceManager(ISessionStorageService sessio
     /// </summary>
     public async Task<string?> RehydrateStoreFromStateAsync()
     {
-        return await sessionStorageSvc.GetItemAsStringAsync(KeyValue);
+        return await stateSvc.RetrieveSerializedStateAsync();
     }
 
     /// <summary>
     /// Clears the store from the persisted state.
     /// </summary>
-    public async Task ClearStoreFromStateAsync()
+    public Task ClearStoreFromStateAsync()
     {
-        await sessionStorageSvc.RemoveItemAsync(KeyValue);
+        // no-op
+        return Task.CompletedTask;
     }
 }

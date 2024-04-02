@@ -7,10 +7,6 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <PackageReference Include="Blazored.SessionStorage" Version="2.4.0" />
-	</ItemGroup>
-
-	<ItemGroup>
 	  <ProjectReference Include="..\Fluxor.Blazor.Web\Fluxor.Blazor.Web.csproj" />
 	</ItemGroup>
 

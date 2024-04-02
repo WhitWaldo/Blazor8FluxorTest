@@ -1,5 +1,4 @@
-﻿using Blazored.SessionStorage;
-using Fluxor;
+﻿using Fluxor;
 using Shared.Persistence;
 using Shared.State.CounterUseCase;
 
@@ -11,6 +10,6 @@ public static class CommonRegistration
     {
         services.AddFluxor(x =>
             x.ScanAssemblies(typeof(Program).Assembly, typeof(CounterState).Assembly)
-                .WithPersistence<SessionStorePersistenceManager>(new ServiceCollection().AddBlazoredSessionStorage()));
+                .WithPersistence<ServerSideStoreManager>(new ServiceCollection()));
     }
 }
